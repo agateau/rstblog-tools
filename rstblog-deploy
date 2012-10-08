@@ -1,0 +1,21 @@
+#!/bin/bash
+set -e
+
+CONFIG=${RSTBLOG_TOOLS_CONFIG:-~/.config/rstblog-tools.conf}
+echo "Loading config from $CONFIG"
+. $CONFIG
+
+if ! [ -d "$BLOG_OUT_DIR" ] ; then
+    echo "'$BLOG_OUT_DIR' does not exist"
+fi
+
+if ! [ -d "$BLOG_OUT_DIR/.git" ] ; then
+    echo "'$BLOG_OUT_DIR' is not a git repository"
+fi
+
+cd $BLOG_DIR
+rsync -av --delete --max-delete=10 --exclude '.git' _build/ $BLOG_OUT_DIR
+cd $BLOG_OUT_DIR
+git add .
+git ci -a -m 'Deploying'
+git push

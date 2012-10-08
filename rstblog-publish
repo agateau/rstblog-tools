@@ -1,0 +1,36 @@
+#!/bin/bash
+set -e
+
+has_field() {
+    awk -F ':' '$0 == "" { exit 1 } $1 == "'$1'" { exit 0 }' $src
+}
+
+set_field() {
+    key=$1
+    value=$2
+    if has_field $key ; then
+        sed -i "s/^$key:.*/$key: $value/" $src
+    else
+        mv $src $src.old
+        (
+            echo "$key: $value"
+            cat $src.old
+        ) > $src
+        rm $src.old
+    fi
+}
+
+src=$1
+
+if ! [ -e "$src" ] ; then
+    echo "ERROR: $src does not exist"
+    exit 1
+fi
+
+date="$(date +'%Y-%m-%d %H:%M:%S %:z')"
+
+echo "Setting 'pub_date' to $date"
+
+set_field pub_date "$date"
+set_field public true
+

@@ -1,0 +1,58 @@
+#!/bin/bash
+set -e
+
+CONFIG=${RSTBLOG_TOOLS_CONFIG:-~/.config/rstblog-tools.conf}
+echo "Loading config from $CONFIG"
+. $CONFIG
+
+cd $BLOG_DIR
+
+echo -n "Title: "
+read title
+
+echo -n "Summary: "
+read summary
+
+echo -n "Tags: "
+read tags
+
+slug=$(echo $title | tr A-Z a-z | tr -- ' ' -)
+echo -n "Slug [$slug]: "
+read answer
+if [ -n "$answer" ] ; then
+    slug=$answer
+fi
+
+dir=$(date +%Y/%m/%d)/$slug
+filename=$dir/index.rst
+
+if [ -e "$filename" ] ; then
+    echo "ERROR: $filename already exists"
+    exit 1
+fi
+
+underlines=$(echo $title | sed s/./-/g)
+
+mkdir -p $dir
+
+cat > $filename <<EOF
+public: false
+tags: [$tags]
+summary: |
+    $summary
+
+$title
+$underlines
+EOF
+
+echo "Skeleton post created as $filename"
+
+echo -n "Edit now (y|N)? "
+read answer
+case "$answer" in
+y|Y)
+    ${EDITOR:-vim} "$filename"
+    ;;
+*)
+    ;;
+esac

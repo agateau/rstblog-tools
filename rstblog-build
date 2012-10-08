@@ -1,0 +1,19 @@
+#!/bin/bash
+set -e
+
+CONFIG=${RSTBLOG_TOOLS_CONFIG:-~/.config/rstblog-tools.conf}
+echo "Loading config from $CONFIG"
+. $CONFIG
+
+clean=false
+if [ "$1" == "-c" ] ; then
+    clean=true
+fi
+
+cd $BLOG_DIR
+if [ "$clean" = "true" ] ; then
+    echo "Cleaning previous build output"
+    rm -rf _build
+fi
+run-rstblog build
+run-rstblog serve

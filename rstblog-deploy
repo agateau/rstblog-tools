@@ -5,17 +5,74 @@ CONFIG=${RSTBLOG_TOOLS_CONFIG:-~/.config/rstblog-tools.conf}
 echo "Loading config from $CONFIG"
 . $CONFIG
 
-if ! [ -d "$BLOG_OUT_DIR" ] ; then
-    echo "'$BLOG_OUT_DIR' does not exist"
-fi
+ask() {
+    echo -n "$* [yN] "
+    read answer
+    case "$answer" in
+    [yY])
+        return 0
+        ;;
+    *)
+        return 1
+        ;;
+    esac
+}
 
-if ! [ -d "$BLOG_OUT_DIR/.git" ] ; then
-    echo "'$BLOG_OUT_DIR' is not a git repository"
-fi
+preflight_checks() {
+    if ! [ -d "$BLOG_OUT_DIR" ] ; then
+        echo "'$BLOG_OUT_DIR' does not exist"
+        exit 1
+    fi
 
+    if ! [ -d "$BLOG_OUT_DIR/.git" ] ; then
+        echo "'$BLOG_OUT_DIR' is not a git repository"
+        exit 1
+    fi
+}
+
+check_local_build() {
+    run-rstblog build
+    run-rstblog serve &
+    sleep 1
+    if ! ask "Local changes look good?" ; then
+        kill %1
+        exit 1
+    fi
+    kill %1
+}
+
+check_git_status() {
+    local status
+    status=$(git status -s)
+    if [ -z "$status" ] ; then
+        return
+    fi
+    echo
+    echo "Git repository is not clean:"
+    echo "$status"
+    echo
+    if ! ask "Add new files and commit all changes?" ; then
+        exit 1
+    fi
+    git add .
+    git commit -m "rstblog-deploy committing changes"
+    git push
+}
+
+deploy() {
+    # Copy to $BLOG_OUT_DIR
+    rsync -av --delete --max-delete=10 --exclude '.git' _build/ $BLOG_OUT_DIR
+    cd $BLOG_OUT_DIR
+
+    # Push to server
+    git add .
+    git ci -a -m 'Deploying'
+    git push
+}
+
+preflight_checks
 cd $BLOG_DIR
-rsync -av --delete --max-delete=10 --exclude '.git' _build/ $BLOG_OUT_DIR
-cd $BLOG_OUT_DIR
-git add .
-git ci -a -m 'Deploying'
-git push
+
+check_local_build
+check_git_status
+deploy

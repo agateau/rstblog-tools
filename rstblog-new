@@ -24,25 +24,22 @@ if [ -n "$answer" ] ; then
 fi
 
 dir=$(date +%Y/%m/%d)/$slug
-filename=$dir/index.rst
+filename=$dir/index.md
 
 if [ -e "$filename" ] ; then
     echo "ERROR: $filename already exists"
     exit 1
 fi
 
-underlines=$(echo $title | sed s/./-/g)
-
 mkdir -p $dir
 
 cat > $filename <<EOF
 public: false
 tags: [$tags]
+title: $title
 summary: |
     $summary
 
-$title
-$underlines
 EOF
 
 echo "Skeleton post created as $filename"

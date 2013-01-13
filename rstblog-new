@@ -23,7 +23,7 @@ if [ -n "$answer" ] ; then
     slug=$answer
 fi
 
-dir=$(date +%Y/%m/%d)/$slug
+dir=drafts/$slug
 filename=$dir/index.md
 
 if [ -e "$filename" ] ; then
@@ -36,7 +36,7 @@ mkdir -p $dir
 cat > $filename <<EOF
 public: false
 tags: [$tags]
-title: $title
+title: "$title"
 summary: |
     $summary
 

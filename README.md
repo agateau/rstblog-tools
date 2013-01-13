@@ -18,14 +18,17 @@ Generates the blog and serves it on localhost.
 
 ## rstblog-new
 
-Asks a few questions and create a new post, marked as private. Offers to start
-editing the post with default editor.
+Asks a few questions and creates a new post in the `drafts` folder. Offers to
+start editing the post with default editor.
 
 ## rstblog-publish
 
-Make a post public and update the `pub_date` to now. This is useful to produce
-accurate dates in feeds. So that the new post appears on top when an aggregator
-fetches it.
+If the post is still in the `drafts` folder, make it public, set the `pub_date`
+and move it to the proper blog post folder.
+
+If the post is already public, update the `pub_date` to now. This is useful to
+produce accurate dates in feeds so that the new post appears on top when an
+agregator fetches it.
 
 ## rstblog-edit
 

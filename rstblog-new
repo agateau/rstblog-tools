@@ -23,7 +23,7 @@ if [ -n "$answer" ] ; then
     slug=$answer
 fi
 
-dir=drafts/$slug
+dir=$(date +%Y)/$slug
 filename=$dir/index.md
 
 if [ -e "$filename" ] ; then

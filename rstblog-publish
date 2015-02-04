@@ -6,16 +6,6 @@ echo "Loading config from $CONFIG"
 echo
 . $CONFIG
 
-cd $BLOG_DIR
-
-move_from_drafts() {
-    src_dir=$(dirname $src)
-    dst_dir=$(date +%Y/%m/%d)
-    echo "Moving $src from $src_dir to $dst_dir"
-    mkdir -p $dst_dir
-    git mv $src_dir $dst_dir/
-}
-
 has_field() {
     awk -F ':' '$0 == "" { exit 1 } $1 == "'$1'" { exit 0 }' $src
 }
@@ -48,11 +38,3 @@ date="$(date +'%Y-%m-%d %H:%M:%S %:z')"
 
 set_field pub_date "$date"
 set_field public true
-
-case "$src" in
-drafts/*/index.md|*/drafts/*/index.md)
-    move_from_drafts
-    ;;
-*)
-    ;;
-esac

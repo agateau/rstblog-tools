@@ -31,6 +31,9 @@ preflight_checks() {
 }
 
 check_local_build() {
+    cd $BLOG_DIR
+    echo "Cleaning previous build output"
+    rm -rf _build
     run-rstblog build
     run-rstblog serve &
     sleep 1

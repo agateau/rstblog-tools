@@ -1,19 +1,42 @@
-#!/bin/bash
-set -e
+#!/usr/bin/env python3
+import argparse
+import os
+import shutil
+import sys
 
-CONFIG=${RSTBLOG_TOOLS_CONFIG:-~/.config/rstblog-tools.conf}
-echo "Loading config from $CONFIG"
-. $CONFIG
+from sh import run_rstblog
 
-clean=false
-if [ "$1" == "-c" ] ; then
-    clean=true
-fi
+import config
 
-cd $BLOG_DIR
-if [ "$clean" = "true" ] ; then
-    echo "Cleaning previous build output"
-    rm -rf _build
-fi
-run-rstblog build
-run-rstblog serve
+
+def pr(line):
+    print(line.strip())
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-c', '--clean', action='store_true',
+        help='Clean')
+
+    args = parser.parse_args()
+
+    cfg = config.load()
+
+    os.chdir(cfg['BLOG_DIR'])
+    if args.clean:
+        print('Cleaning previous build output')
+        if os.path.exists('_build'):
+            shutil.rmtree('_build')
+
+    try:
+        print('Building')
+        run_rstblog.build(_out=pr)
+        return run_rstblog.serve(_out=pr)
+    except KeyboardInterrupt:
+        print()
+        return 0
+
+
+if __name__ == '__main__':
+    sys.exit(main())
+# vi: ts=4 sw=4 et

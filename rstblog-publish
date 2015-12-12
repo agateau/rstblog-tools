@@ -1,40 +1,64 @@
-#!/bin/bash
-set -e
+#!/usr/bin/env python3
+import argparse
+import time
+import sys
+from pathlib import Path
+from datetime import datetime
 
-CONFIG=${RSTBLOG_TOOLS_CONFIG:-~/.config/rstblog-tools.conf}
-echo "Loading config from $CONFIG"
-echo
-. $CONFIG
+import config
 
-has_field() {
-    awk -F ':' '$0 == "" { exit 1 } $1 == "'$1'" { exit 0 }' $src
-}
+from utils import die
 
-set_field() {
-    key=$1
-    value=$2
-    if has_field $key ; then
-        echo "Replacing existing value of '$key' with '$value'"
-        sed -i "s/^$key:.*/$key: $value/" $src
-    else
-        echo "Adding new key '$key' with value '$value'"
-        mv $src $src.old
-        (
-            echo "$key: $value"
-            cat $src.old
-        ) > $src
-        rm $src.old
-    fi
-}
+def tzstring():
+    delta = time.timezone
+    dt = datetime.utcfromtimestamp(abs(delta))
+    txt = dt.strftime('%H:%M')
+    if delta > 0:
+        return '-' + txt
+    else:
+        return '+' + txt
 
-src=$1
 
-if ! [ -e "$src" ] ; then
-    echo "ERROR: $src does not exist"
-    exit 1
-fi
+def get_date():
+    now = datetime.now()
+    return now.strftime('%Y-%m-%d %H:%M:%S') + ' ' + tzstring()
 
-date="$(date +'%Y-%m-%d %H:%M:%S %:z')"
 
-set_field pub_date "$date"
-set_field public true
+def set_field(lines, wanted_key, wanted_value):
+    new_line = '{}: {}\n'.format(wanted_key, wanted_value)
+    for idx, line in enumerate(lines):
+        if ':' in line:
+            key, _ = line.split(':', 1)
+            if key.strip() == wanted_key:
+                lines[idx] = new_line
+                break
+    else:
+        lines.insert(0, new_line)
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('path_to_index_md')
+    args = parser.parse_args()
+
+    cfg = config.load()
+
+    path = Path(args.path_to_index_md)
+    if not path.exists():
+        die('ERROR: {} does not exist'.format(path))
+
+    with path.open() as fp:
+        lines = fp.readlines()
+
+    set_field(lines, 'pub_date', get_date())
+    set_field(lines, 'public', 'true')
+
+    with path.open('w') as fp:
+        fp.write(''.join(lines))
+
+    return 0
+
+
+if __name__ == '__main__':
+    sys.exit(main())
+# vi: ts=4 sw=4 et

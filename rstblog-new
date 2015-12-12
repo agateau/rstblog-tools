@@ -1,55 +1,54 @@
-#!/bin/bash
-set -e
+#!/usr/bin/env python3
+import os
+import subprocess
+import sys
+from datetime import datetime
+from pathlib import Path
 
-CONFIG=${RSTBLOG_TOOLS_CONFIG:-~/.config/rstblog-tools.conf}
-echo "Loading config from $CONFIG"
-. $CONFIG
+from slugify import slugify
 
-cd $BLOG_DIR
+import config
+from utils import die
 
-echo -n "Title: "
-read title
 
-echo -n "Summary: "
-read summary
+def main():
+    cfg = config.load()
 
-echo -n "Tags: "
-read tags
+    title = input('Title: ')
+    summary = input('Summary: ')
+    tags = input('Tags: ')
 
-slug=$(echo $title | tr A-Z a-z | tr -- ' ' -)
-echo -n "Slug [$slug]: "
-read answer
-if [ -n "$answer" ] ; then
-    slug=$answer
-fi
+    slug = slugify(title)
+    answer = input('Slug [{}]: '.format(slug))
+    if answer:
+        slug = answer
 
-dir=$(date +%Y)/$slug
-filename=$dir/index.md
+    year = datetime.now().year
+    dirname = Path(cfg['BLOG_DIR']) / str(year) / slug
+    filepath = dirname / 'index.md'
 
-if [ -e "$filename" ] ; then
-    echo "ERROR: $filename already exists"
-    exit 1
-fi
+    if filepath.exists():
+        die('ERROR: {} already exists'.format(filepath))
 
-mkdir -p $dir
+    if not dirname.exists():
+        dirname.mkdir(parents=True)
 
-cat > $filename <<EOF
-public: false
-tags: [$tags]
-title: "$title"
-summary: |
-    $summary
+    with filepath.open('w') as fp:
+        print('public: false', file=fp)
+        print('tags: [{}]'.format(tags), file=fp)
+        print('title: {}'.format(title), file=fp)
+        print('summary: |\n    {}\n'.format(summary), file=fp)
 
-EOF
+    print('Skeleton post created as {}'.format(filepath))
 
-echo "Skeleton post created as $filename"
+    answer = input('Edit now (y|N)? ')
+    if answer.lower() == 'y':
+        editor = cfg.get('BLOG_EDITOR', 'vim')
+        subprocess.call([editor, str(filepath)])
 
-echo -n "Edit now (y|N)? "
-read answer
-case "$answer" in
-y|Y)
-    ${BLOG_EDITOR:-vim} "$filename"
-    ;;
-*)
-    ;;
-esac
+    return 0
+
+
+if __name__ == '__main__':
+    sys.exit(main())
+# vi: ts=4 sw=4 et

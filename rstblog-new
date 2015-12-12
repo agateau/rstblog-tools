@@ -48,7 +48,7 @@ echo -n "Edit now (y|N)? "
 read answer
 case "$answer" in
 y|Y)
-    ${EDITOR:-vim} "$filename"
+    ${BLOG_EDITOR:-vim} "$filename"
     ;;
 *)
     ;;

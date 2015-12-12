@@ -8,6 +8,7 @@ Content:
 
     BLOG_DIR=/path/to/blog
     BLOG_OUT_DIR=/path/to/blog/out
+    BLOG_EDITOR=editor-to-start-when-creating-blog
 
 
 # Tools

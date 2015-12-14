@@ -1,16 +1,10 @@
 #!/usr/bin/env python3
 import argparse
 import os
-import shutil
 import sys
 
-from sh import run_rstblog
-
+import build
 import config
-
-
-def pr(line):
-    print(line.strip())
 
 
 def main():
@@ -25,13 +19,11 @@ def main():
     os.chdir(cfg['BLOG_DIR'])
     if args.clean:
         print('Cleaning previous build output')
-        if os.path.exists('_build'):
-            shutil.rmtree('_build')
 
     try:
         print('Building')
-        run_rstblog.build(_out=pr)
-        return run_rstblog.serve(_out=pr)
+        build.build(clean=args.clean)
+        build.serve()
     except KeyboardInterrupt:
         print()
         return 0

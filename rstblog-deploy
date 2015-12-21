@@ -1,81 +1,105 @@
-#!/bin/bash
-set -e
+#!/usr/bin/env python3
+import os
+import signal
+import sys
+import time
 
-CONFIG=${RSTBLOG_TOOLS_CONFIG:-~/.config/rstblog-tools.conf}
-echo "Loading config from $CONFIG"
-. $CONFIG
+from pathlib import Path
 
-ask() {
-    echo -n "$* [yN] "
-    read answer
-    case "$answer" in
-    [yY])
-        return 0
-        ;;
-    *)
-        return 1
-        ;;
-    esac
-}
+from sh import git, rsync
 
-preflight_checks() {
-    if ! [ -d "$BLOG_OUT_DIR" ] ; then
-        echo "'$BLOG_OUT_DIR' does not exist"
-        exit 1
-    fi
+import build
+import config
 
-    if ! [ -d "$BLOG_OUT_DIR/.git" ] ; then
-        echo "'$BLOG_OUT_DIR' is not a git repository"
-        exit 1
-    fi
-}
+from utils import die, confirm
 
-check_local_build() {
-    cd $BLOG_DIR
-    echo "Cleaning previous build output"
-    rm -rf _build
-    run-rstblog build
-    run-rstblog serve &
-    sleep 1
-    if ! ask "Local changes look good?" ; then
-        kill %1
-        exit 1
-    fi
-    kill %1
-}
 
-check_git_status() {
-    local status
-    status=$(git status -s)
-    if [ -z "$status" ] ; then
+def preflight_checks(blog_out_dir):
+    if not blog_out_dir.is_dir():
+        die('{} does not exist'.format(blog_out_dir))
+
+    git_dir = blog_out_dir / '.git'
+    if not git_dir.is_dir():
+        die('{} is not a git repository'.format(blog_out_dir))
+
+
+def check_local_build():
+    build.build(clean=True)
+    pid = os.fork()
+    if pid == 0:
+        build.serve()
+        sys.exit(0)
+
+    # In parent
+
+    # Give enough time to dev server to start so that its output does not
+    # come in the confirm question
+    time.sleep(1)
+
+    ok = confirm('Local changes look good?')
+    os.kill(pid, signal.SIGTERM)
+    if not ok:
+        sys.exit(1)
+
+
+def check_modified_files():
+    status = git.status('-s')
+    if not status:
         return
-    fi
-    echo
-    echo "Git repository is not clean:"
-    echo "$status"
-    echo
-    if ! ask "Add new files and commit all changes?" ; then
-        exit 1
-    fi
-    git add .
-    git commit -m "rstblog-deploy committing changes"
-    git push
-}
 
-deploy() {
-    # Copy to $BLOG_OUT_DIR
-    rsync -av --delete --max-delete=10 --exclude '.git' _build/ $BLOG_OUT_DIR
-    cd $BLOG_OUT_DIR
+    print('Git repository is not clean:')
+    print(status)
+    print()
+    if not confirm('Add new files, commit changes and push?'):
+        sys.exit(1)
+    git.add('.')
+    git.commit('-m', 'rstblog-deploy committing changes')
+    git.push()
+
+
+def check_need_push():
+    commits = git('rev-list', 'origin..')
+    commits = commits.strip()
+    if not commits:
+        return
+
+    print('Unpushed commits:')
+    git.log('--format=online', 'origin..')
+    print()
+    if not confirm('Push them?'):
+        sys.exit(1)
+    git.push()
+
+
+def deploy(blog_out_dir):
+    git_out = git.bake('-C', blog_out_dir)
+    git_out('pull', _out=build.pr)
+
+    rsync('-av', '--delete', '--max-delete', '10', '--exclude', '.git', '_build/', blog_out_dir, _out=build.pr)
 
     # Push to server
-    git add .
-    git ci -a -m 'Deploying'
-    git push
-}
+    status = git_out.status('-s')
+    if status:
+        print('Committing changes in output repository')
+        git_out.add('.')
+        git_out.commit('-a', '-m', 'Deploying')
+    print('Pushing changes in output repository')
+    git_out.push(_out=build.pr)
 
-preflight_checks
-cd $BLOG_DIR
 
-check_local_build
-check_git_status
-deploy
+def main():
+    cfg = config.load()
+    blog_out_dir = Path(cfg['BLOG_OUT_DIR'])
+    preflight_checks(blog_out_dir)
+    os.chdir(cfg['BLOG_DIR'])
+
+    check_local_build()
+    check_modified_files()
+    check_need_push()
+    deploy(cfg['BLOG_OUT_DIR'])
+    return 0
+
+
+if __name__ == '__main__':
+    sys.exit(main())
+# vi: ts=4 sw=4 et

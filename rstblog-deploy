@@ -65,8 +65,8 @@ def check_need_push():
         return
 
     print('Unpushed commits:')
-    git.log('--format=oneline', 'origin/master..master')
-    print()
+    commits = git.log('--format=oneline', 'origin/master..master')
+    print(commits)
     if not confirm('Push them?'):
         sys.exit(1)
     git.push()

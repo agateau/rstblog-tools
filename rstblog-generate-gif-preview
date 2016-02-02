@@ -1,0 +1,76 @@
+#!/usr/bin/env python3
+import argparse
+import itertools
+import operator
+import os
+import sys
+
+from PIL import Image
+
+
+SIZE = 200
+
+THUMBNAIL_PREFIX = 'thumb_'
+
+PLAY_PATH = os.path.join(os.path.dirname(__file__), 'play-overlay.png')
+
+
+def pt_op(pt1, pt2, op):
+    return tuple(op(v1, v2) for v1, v2 in zip(pt1, pt2))
+
+
+def pt_add(pt1, pt2):
+    return pt_op(pt1, pt2, operator.add)
+
+
+def pt_sub(pt1, pt2):
+    return pt_op(pt1, pt2, operator.sub)
+
+
+def pt_mul(pt1, v):
+    return pt_op(pt1, itertools.repeat(v), operator.mul)
+
+
+def pt_div(pt1, v):
+    return pt_op(pt1, itertools.repeat(v), operator.floordiv)
+
+
+def center_image(src, size):
+    dst = Image.new('RGBA', size, (0, 0, 0, 0))
+    xy = pt_div(pt_sub(size, src.size), 2)
+    dst.paste(src, xy)
+    return dst
+
+
+def generate_preview(path, overlay_img):
+    img = Image.open(path)
+    img = img.convert('RGBA')
+    img.thumbnail((SIZE, SIZE))
+    center = (img.size[0] / 2, img.size[1] / 2)
+
+    overlay_img = center_image(overlay_img, img.size)
+    img = Image.alpha_composite(img, overlay_img)
+
+    image_dirname = os.path.dirname(path)
+    name = os.path.basename(path)
+    name = os.path.splitext(name)[0]
+    preview_path = os.path.join(image_dirname, THUMBNAIL_PREFIX + name + '.png')
+    img.save(preview_path)
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('gif_file', nargs='+')
+
+    args = parser.parse_args()
+
+    overlay_img = Image.open(PLAY_PATH)
+
+    for gif_file in args.gif_file:
+        print(gif_file)
+        generate_preview(gif_file, overlay_img)
+
+
+if __name__ == '__main__':
+    sys.exit(main())
+# vi: ts=4 sw=4 et

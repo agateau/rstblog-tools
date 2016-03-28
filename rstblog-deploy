@@ -59,13 +59,13 @@ def check_modified_files():
 
 
 def check_need_push():
-    commits = git('rev-list', 'origin..')
+    commits = git('rev-list', 'origin/master..master')
     commits = commits.strip()
     if not commits:
         return
 
     print('Unpushed commits:')
-    git.log('--format=oneline', 'origin..')
+    git.log('--format=oneline', 'origin/master..master')
     print()
     if not confirm('Push them?'):
         sys.exit(1)

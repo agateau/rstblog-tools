@@ -36,10 +36,11 @@ def check_local_build():
     # come in the confirm question
     time.sleep(1)
 
-    ok = confirm('Local changes look good?')
-    os.kill(pid, signal.SIGTERM)
-    if not ok:
-        sys.exit(1)
+    try:
+        if not confirm('Local changes look good?'):
+            sys.exit(1)
+    finally:
+        os.kill(pid, signal.SIGTERM)
 
 
 def check_modified_files():
@@ -90,16 +91,19 @@ def deploy(blog_out_dir):
 def main():
     cfg = config.load()
     blog_out_dir = Path(cfg['BLOG_OUT_DIR'])
-    preflight_checks(blog_out_dir)
-    os.chdir(cfg['BLOG_DIR'])
+    try:
+        preflight_checks(blog_out_dir)
+        os.chdir(cfg['BLOG_DIR'])
 
-    check_local_build()
-    check_modified_files()
-    check_need_push()
-    deploy(cfg['BLOG_OUT_DIR'])
-    return 0
+        check_local_build()
+        check_modified_files()
+        check_need_push()
+        deploy(cfg['BLOG_OUT_DIR'])
+        sys.exit(0)
+    except KeyboardInterrupt:
+        sys.exit(1)
 
 
 if __name__ == '__main__':
-    sys.exit(main())
+    main()
 # vi: ts=4 sw=4 et

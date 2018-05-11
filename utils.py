@@ -1,5 +1,7 @@
 import sys
 
+BREAK = '<!-- break -->'
+
 
 def die(msg):
     print(msg, file=sys.stderr)

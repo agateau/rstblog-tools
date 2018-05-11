@@ -11,14 +11,13 @@ from pathlib import Path
 from slugify import slugify
 
 import config
-from utils import die
+from utils import die, BREAK
 
 
 def main():
     cfg = config.load()
 
     title = input('Title: ')
-    summary = input('Summary: ')
     tags = input('Tags: ')
 
     slug = slugify(title)
@@ -40,7 +39,7 @@ def main():
         print('public: false', file=fp)
         print('tags: [{}]'.format(tags), file=fp)
         print('title: {}'.format(title), file=fp)
-        print('summary: |\n    {}\n'.format(summary), file=fp)
+        print('\n{}\n'.format(BREAK), file=fp)
 
     print('Skeleton post created as {}'.format(filepath))
 

@@ -5,8 +5,8 @@ import sys
 from pathlib import Path
 from datetime import datetime
 
+from utils import die, BREAK
 
-from utils import die
 
 def tzstring():
     delta = time.timezone
@@ -35,6 +35,11 @@ def set_field(lines, wanted_key, wanted_value):
         lines.insert(0, new_line)
 
 
+def check_break(lines):
+    if BREAK + '\n' not in lines:
+        die('Missing {} line'.format(BREAK))
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('path_to_index_md')
@@ -46,6 +51,8 @@ def main():
 
     with path.open() as fp:
         lines = fp.readlines()
+
+    check_break(lines)
 
     set_field(lines, 'pub_date', get_date())
     set_field(lines, 'public', 'true')

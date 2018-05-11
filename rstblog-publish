@@ -5,7 +5,6 @@ import sys
 from pathlib import Path
 from datetime import datetime
 
-import config
 
 from utils import die
 
@@ -40,8 +39,6 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('path_to_index_md')
     args = parser.parse_args()
-
-    cfg = config.load()
 
     path = Path(args.path_to_index_md)
     if not path.exists():

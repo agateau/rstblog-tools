@@ -46,7 +46,6 @@ def generate_preview(path, overlay_img):
     img = Image.open(path)
     img = img.convert('RGBA')
     img.thumbnail((SIZE, SIZE))
-    center = (img.size[0] / 2, img.size[1] / 2)
 
     overlay_img = center_image(overlay_img, img.size)
     img = Image.alpha_composite(img, overlay_img)

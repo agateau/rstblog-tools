@@ -37,7 +37,7 @@ def main():
 
     with filepath.open('w') as fp:
         print('public: true', file=fp)
-        print('pub_date: {}'.format(get_date()))
+        print('pub_date: {}'.format(get_date()), file=fp)
         print('tags: [{}]'.format(tags), file=fp)
         print('title: {}'.format(title), file=fp)
         print('\n{}\n'.format(BREAK), file=fp)

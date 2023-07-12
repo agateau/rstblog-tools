@@ -36,11 +36,13 @@ def main():
         dirname.mkdir(parents=True)
 
     with filepath.open('w') as fp:
+        print('---', file=fp)
         print('public: true', file=fp)
         print('pub_date: {}'.format(get_date()), file=fp)
         print('tags: [{}]'.format(tags), file=fp)
         print('title: {}'.format(title), file=fp)
         print('mastodon:', file=fp)
+        print('---', file=fp)
         print('\n{}\n'.format(BREAK), file=fp)
 
     print('Skeleton post created as {}'.format(filepath))
